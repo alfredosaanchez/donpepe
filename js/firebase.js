@@ -1,4 +1,4 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, addDoc, getDocs, query, orderBy, where, Timestamp, doc, setDoc, getDoc, deleteDoc }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
@@ -12,7 +12,8 @@ const firebaseConfig = {
   measurementId:     "G-ZQWCYV5L2Y"
 };
 
-const app = initializeApp(firebaseConfig);
+// Evita inicializar Firebase dos veces
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 const db  = getFirestore(app);
 
 export async function guardarPedido(pedido) {

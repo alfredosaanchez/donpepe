@@ -1,13 +1,16 @@
 import { obtenerPedidos, obtenerPedidosPorRango, guardarPagoMovil, obtenerPagoMovil, eliminarPedido } from "./firebase.js";
 import { MENU } from "./menu.js";
 
-const PIN = "1234"; // ← Cámbialo aquí
+const PIN = "1234";
+let pedidoABorrar = null;
 
 // ── Init ──────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("pin-input").addEventListener("keydown", e => {
-    if (e.key === "Enter") checkPin();
-  });
+  // PIN login
+  document.getElementById("btn-pin").addEventListener("click", checkPin);
+  document.getElementById("pin-input").addEventListener("keydown", e => { if (e.key === "Enter") checkPin(); });
+
+  // Tabs
   document.querySelectorAll(".tab").forEach(tab => {
     tab.addEventListener("click", () => {
       document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
@@ -16,14 +19,30 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById(tab.dataset.tab).classList.add("active");
     });
   });
+
+  // Fechas por defecto
   const hoy   = new Date();
   const hace7 = new Date(); hace7.setDate(hoy.getDate() - 7);
   document.getElementById("fecha-desde").value = hace7.toISOString().split("T")[0];
   document.getElementById("fecha-hasta").value = hoy.toISOString().split("T")[0];
+
+  // Filtrar
+  document.getElementById("btn-filtrar").addEventListener("click", filtrarPorFecha);
+
+  // Guardar pago
+  document.getElementById("btn-guardar-pago").addEventListener("click", guardarPago);
+
+  // Modal borrar
+  document.getElementById("btn-cancelar-borrar").addEventListener("click", cerrarModalBorrar);
+  document.getElementById("modal-borrar").addEventListener("click", e => {
+    if (e.target === document.getElementById("modal-borrar")) cerrarModalBorrar();
+  });
+  document.getElementById("btn-confirmar-borrar").addEventListener("click", ejecutarBorrar);
+  document.getElementById("borrar-pin-input").addEventListener("keydown", e => { if (e.key === "Enter") ejecutarBorrar(); });
 });
 
 // ── Login ─────────────────────────────────────────────────────
-window.checkPin = function() {
+function checkPin() {
   const val = document.getElementById("pin-input").value;
   if (val === PIN) {
     document.getElementById("login-box").style.display  = "none";
@@ -34,7 +53,7 @@ window.checkPin = function() {
     document.getElementById("pin-error").style.display = "block";
     document.getElementById("pin-input").value = "";
   }
-};
+}
 
 // ── Cargar datos ──────────────────────────────────────────────
 async function cargarDatos() {
@@ -45,7 +64,7 @@ async function cargarDatos() {
   renderHistorial(pedidos);
 }
 
-window.filtrarPorFecha = async function() {
+async function filtrarPorFecha() {
   const desde = new Date(document.getElementById("fecha-desde").value + "T00:00:00");
   const hasta = new Date(document.getElementById("fecha-hasta").value + "T23:59:59");
   if (isNaN(desde) || isNaN(hasta)) return;
@@ -54,7 +73,7 @@ window.filtrarPorFecha = async function() {
   showLoading(false);
   renderResumen(pedidos);
   renderHistorial(pedidos);
-};
+}
 
 function showLoading(on) {
   document.getElementById("loading-indicator").style.display = on ? "block" : "none";
@@ -119,12 +138,12 @@ function renderHistorial(pedidos) {
     const label = dia.fecha.toLocaleDateString("es-VE", { weekday:"long", day:"numeric", month:"long", year:"numeric" });
     return `
     <div class="day-block">
-      <div class="day-header" onclick="toggleDia('dia-${idx}')">
+      <div class="day-header" id="header-dia-${idx}">
         <div>
           <div class="day-date">${label}</div>
           <div class="day-summary">${dia.pedidos.length} pedido${dia.pedidos.length!==1?"s":""}</div>
         </div>
-        <div style="font-weight:700; color:#1a7a1a;">$${dia.total.toFixed(2)}</div>
+        <div style="font-weight:700;color:#1a7a1a;">$${dia.total.toFixed(2)}</div>
       </div>
       <div class="day-orders" id="dia-${idx}">
         ${dia.pedidos.map(p => {
@@ -132,51 +151,57 @@ function renderHistorial(pedidos) {
           const items = (p.items||[]).map(i => `${i.qty}× ${i.name}`).join(", ");
           return `
           <div class="order-row" id="order-${p.id}">
-            <div style="flex:1; min-width:0;">
+            <div style="flex:1;min-width:0;">
               <div class="order-client"><i class="ti ti-user" style="font-size:12px;"></i> ${p.cliente||"Cliente"}</div>
-              <div class="order-items">${items}${p.nota ? ` · 📝 ${p.nota}` : ""}</div>
+              <div class="order-items">${items}${p.nota?` · 📝 ${p.nota}`:""}</div>
             </div>
-            <div style="text-align:right; flex-shrink:0;">
+            <div style="text-align:right;flex-shrink:0;">
               <div class="order-total">$${(p.total||0).toFixed(2)}</div>
               <div class="order-time">${hora}</div>
-              <button class="btn-borrar-pedido" onclick="window.confirmarBorrar('${p.id}')">
-                <i class="ti ti-trash"></i>
-              </button>
+              <button class="btn-borrar-pedido" data-id="${p.id}"><i class="ti ti-trash"></i></button>
             </div>
           </div>`;
         }).join("")}
       </div>
     </div>`;
   }).join("");
+
+  // Eventos: toggle días
+  document.querySelectorAll("[id^='header-dia-']").forEach(header => {
+    const idx = header.id.replace("header-dia-", "");
+    header.addEventListener("click", () => document.getElementById(`dia-${idx}`).classList.toggle("open"));
+  });
+
+  // Eventos: botones borrar
+  document.querySelectorAll(".btn-borrar-pedido").forEach(btn => {
+    btn.addEventListener("click", () => abrirModalBorrar(btn.dataset.id));
+  });
 }
 
-window.toggleDia = function(id) {
-  document.getElementById(id).classList.toggle("open");
-};
-
-// ── Borrar pedido con PIN ─────────────────────────────────────
-window.confirmarBorrar = function(pedidoId) {
-  document.getElementById("modal-borrar").classList.add("visible");
+// ── Borrar pedido ─────────────────────────────────────────────
+function abrirModalBorrar(id) {
+  pedidoABorrar = id;
   document.getElementById("borrar-pin-input").value = "";
   document.getElementById("borrar-pin-error").style.display = "none";
-  document.getElementById("btn-confirmar-borrar").onclick = () => ejecutarBorrar(pedidoId);
-};
+  document.getElementById("modal-borrar").classList.add("visible");
+}
 
-window.cerrarModalBorrar = function() {
+function cerrarModalBorrar() {
+  pedidoABorrar = null;
   document.getElementById("modal-borrar").classList.remove("visible");
-};
+}
 
-async function ejecutarBorrar(pedidoId) {
+async function ejecutarBorrar() {
   const val = document.getElementById("borrar-pin-input").value;
   if (val !== PIN) {
     document.getElementById("borrar-pin-error").style.display = "block";
     document.getElementById("borrar-pin-input").value = "";
     return;
   }
-  const ok = await eliminarPedido(pedidoId);
+  const ok = await eliminarPedido(pedidoABorrar);
   if (ok) {
     cerrarModalBorrar();
-    const el = document.getElementById(`order-${pedidoId}`);
+    const el = document.getElementById(`order-${pedidoABorrar}`);
     if (el) { el.style.opacity = "0"; el.style.transition = "opacity 0.3s"; setTimeout(() => el.remove(), 300); }
     showToast("Pedido eliminado");
   } else {
@@ -195,7 +220,7 @@ async function cargarPagoMovil() {
   mostrarPreviewPago(datos);
 }
 
-window.guardarPago = async function() {
+async function guardarPago() {
   const datos = {
     banco:    document.getElementById("pm-banco").value.trim(),
     telefono: document.getElementById("pm-telefono").value.trim(),
@@ -211,7 +236,7 @@ window.guardarPago = async function() {
     setTimeout(() => document.getElementById("pago-guardado").style.display = "none", 3000);
     mostrarPreviewPago(datos);
   }
-};
+}
 
 function mostrarPreviewPago(datos) {
   document.getElementById("pago-preview").style.display = "block";
