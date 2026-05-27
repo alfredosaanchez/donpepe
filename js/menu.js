@@ -1,7 +1,7 @@
 import { guardarPedido, obtenerPagoMovil } from "./firebase.js";
 import { obtenerTasaBCV, getTasaActual, convertirABolivares, formatBs } from "./bcv.js";
 
-export const WHATSAPP = "584140000000";
+export const WHATSAPP = "584146834774";
 
 export const MENU = [
   { id:1, emoji:"🍔", name:"Clásica Don Pepe",  desc:"Carne, queso, lechuga, tomate, mayonesa",        price:5    },
