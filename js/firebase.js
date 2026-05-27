@@ -1,6 +1,5 @@
-// ── Configuración Firebase ────────────────────────────────────
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, query, orderBy, where, Timestamp, doc, setDoc, getDoc }
+import { getFirestore, collection, addDoc, getDocs, query, orderBy, where, Timestamp, doc, setDoc, getDoc, deleteDoc }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -16,33 +15,20 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
 
-// ── Guardar pedido ────────────────────────────────────────────
 export async function guardarPedido(pedido) {
   try {
-    await addDoc(collection(db, "pedidos"), {
-      ...pedido,
-      fecha: Timestamp.now()
-    });
+    await addDoc(collection(db, "pedidos"), { ...pedido, fecha: Timestamp.now() });
     return true;
-  } catch (e) {
-    console.error("Error guardando pedido:", e);
-    return false;
-  }
+  } catch (e) { console.error("Error guardando pedido:", e); return false; }
 }
 
-// ── Obtener todos los pedidos ─────────────────────────────────
 export async function obtenerPedidos() {
   try {
-    const q = query(collection(db, "pedidos"), orderBy("fecha", "desc"));
-    const snap = await getDocs(q);
+    const snap = await getDocs(query(collection(db, "pedidos"), orderBy("fecha", "desc")));
     return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  } catch (e) {
-    console.error("Error obteniendo pedidos:", e);
-    return [];
-  }
+  } catch (e) { console.error("Error obteniendo pedidos:", e); return []; }
 }
 
-// ── Obtener pedidos entre dos fechas ──────────────────────────
 export async function obtenerPedidosPorRango(desde, hasta) {
   try {
     const q = query(
@@ -53,30 +39,26 @@ export async function obtenerPedidosPorRango(desde, hasta) {
     );
     const snap = await getDocs(q);
     return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  } catch (e) {
-    console.error("Error filtrando pedidos:", e);
-    return [];
-  }
+  } catch (e) { console.error("Error filtrando pedidos:", e); return []; }
 }
 
-// ── Guardar datos de pago móvil ───────────────────────────────
+export async function eliminarPedido(pedidoId) {
+  try {
+    await deleteDoc(doc(db, "pedidos", pedidoId));
+    return true;
+  } catch (e) { console.error("Error eliminando pedido:", e); return false; }
+}
+
 export async function guardarPagoMovil(datos) {
   try {
     await setDoc(doc(db, "config", "pagoMovil"), datos);
     return true;
-  } catch (e) {
-    console.error("Error guardando pago móvil:", e);
-    return false;
-  }
+  } catch (e) { console.error("Error guardando pago móvil:", e); return false; }
 }
 
-// ── Obtener datos de pago móvil ───────────────────────────────
 export async function obtenerPagoMovil() {
   try {
     const snap = await getDoc(doc(db, "config", "pagoMovil"));
     return snap.exists() ? snap.data() : null;
-  } catch (e) {
-    console.error("Error obteniendo pago móvil:", e);
-    return null;
-  }
+  } catch (e) { console.error("Error obteniendo pago móvil:", e); return null; }
 }

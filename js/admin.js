@@ -1,21 +1,9 @@
-import { obtenerPedidos, obtenerPedidosPorRango, guardarPagoMovil, obtenerPagoMovil } from "./firebase.js";
-import { deleteDoc, doc, getFirestore } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { obtenerPedidos, obtenerPedidosPorRango, guardarPagoMovil, obtenerPagoMovil, eliminarPedido } from "./firebase.js";
 import { MENU } from "./menu.js";
 
 const PIN = "1234"; // ← Cámbialo aquí
 
-const firebaseConfig = {
-  apiKey:            "AIzaSyAvO8mKOitUzLfaj-7exe5rrexsw-31IrQ",
-  authDomain:        "burger-don-pepe.firebaseapp.com",
-  projectId:         "burger-don-pepe",
-  storageBucket:     "burger-don-pepe.firebasestorage.app",
-  messagingSenderId: "289295612007",
-  appId:             "1:289295612007:web:2ed6462e189a1ed5b9fcc2",
-};
-const app = initializeApp(firebaseConfig);
-const db  = getFirestore(app);
-
+// ── Init ──────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("pin-input").addEventListener("keydown", e => {
     if (e.key === "Enter") checkPin();
@@ -48,7 +36,7 @@ window.checkPin = function() {
   }
 };
 
-// ── Datos ─────────────────────────────────────────────────────
+// ── Cargar datos ──────────────────────────────────────────────
 async function cargarDatos() {
   showLoading(true);
   const pedidos = await obtenerPedidos();
@@ -93,7 +81,7 @@ function renderResumen(pedidos) {
 
   const maxQty = ventas[sorted[0].id].qty || 1;
   document.getElementById("ranking").innerHTML = sorted.map(item => {
-    const v = ventas[item.id];
+    const v   = ventas[item.id];
     const pct = Math.round((v.qty / maxQty) * 100);
     return `
     <div class="rank-item">
@@ -185,13 +173,13 @@ async function ejecutarBorrar(pedidoId) {
     document.getElementById("borrar-pin-input").value = "";
     return;
   }
-  try {
-    await deleteDoc(doc(db, "pedidos", pedidoId));
+  const ok = await eliminarPedido(pedidoId);
+  if (ok) {
     cerrarModalBorrar();
     const el = document.getElementById(`order-${pedidoId}`);
     if (el) { el.style.opacity = "0"; el.style.transition = "opacity 0.3s"; setTimeout(() => el.remove(), 300); }
     showToast("Pedido eliminado");
-  } catch(e) {
+  } else {
     showToast("Error al eliminar el pedido");
   }
 }
