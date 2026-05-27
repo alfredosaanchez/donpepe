@@ -1,5 +1,8 @@
 import { obtenerPedidos, obtenerPedidosPorRango, guardarPagoMovil, obtenerPagoMovil, eliminarPedido } from "./firebase.js";
 import { MENU } from "./menu.js";
+import { obtenerTasaBCV, formatBs, convertirABolivares } from "./bcv.js";
+
+let tasaAdmin = null;
 
 const PIN = "1234";
 let pedidoABorrar = null;
@@ -57,6 +60,8 @@ function checkPin() {
 
 // ── Cargar datos ──────────────────────────────────────────────
 async function cargarDatos() {
+  const result = await obtenerTasaBCV();
+  if (result) tasaAdmin = result.tasa;
   showLoading(true);
   const pedidos = await obtenerPedidos();
   showLoading(false);
@@ -94,7 +99,8 @@ function renderResumen(pedidos) {
   const topItem = ventas[sorted[0].id].qty > 0 ? sorted[0] : null;
 
   document.getElementById("stat-pedidos").textContent  = pedidos.length;
-  document.getElementById("stat-total").textContent    = `$${totalUSD.toFixed(2)}`;
+  const bsTotal = tasaAdmin ? ' / ' + formatBs(convertirABolivares(totalUSD)) : '';
+  document.getElementById("stat-total").textContent = '$' + totalUSD.toFixed(2) + bsTotal;
   document.getElementById("stat-unidades").textContent = totalUnidades;
   document.getElementById("stat-top").textContent      = topItem ? `${topItem.emoji} ${topItem.name.split(" ")[0]}` : "—";
 
@@ -204,7 +210,6 @@ async function ejecutarBorrar() {
     const el = document.getElementById(`order-${pedidoABorrar}`);
     if (el) { el.style.opacity = "0"; el.style.transition = "opacity 0.3s"; setTimeout(() => el.remove(), 300); }
     showToast("Pedido eliminado");
-cargarDatos();
   } else {
     showToast("Error al eliminar el pedido");
   }
