@@ -401,3 +401,20 @@ body {
   line-height: 1.5;
 }
 .comprobante-aviso i { flex-shrink: 0; margin-top: 1px; }
+
+/* ── Copiar dato ── */
+.pago-valor-wrap { display: flex; align-items: center; gap: 8px; }
+.btn-copiar {
+  background: #e8f5e8;
+  border: 1px solid #1a7a1a44;
+  border-radius: 6px;
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  color: #1a7a1a;
+  font-size: 14px;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.btn-copiar:hover  { background: #d0edd0; }
+.btn-copiar.copiado { background: #1a7a1a; color: #fff; }

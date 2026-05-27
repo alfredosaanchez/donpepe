@@ -156,6 +156,19 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="modal-borrar" onclick="if(event.target===this)cerrarModalBorrar()">
+  <div class="modal-box-centro">
+    <h3><i class="ti ti-trash"></i> Eliminar pedido</h3>
+    <p>Ingresa el PIN para confirmar la eliminación</p>
+    <div class="borrar-pin-row">
+      <input type="password" id="borrar-pin-input" class="borrar-pin-input" maxlength="4" placeholder="••••" />
+      <button class="btn-confirmar-borrar" id="btn-confirmar-borrar">Borrar</button>
+    </div>
+    <p class="borrar-pin-error" id="borrar-pin-error">PIN incorrecto</p>
+    <button class="btn-cancelar-borrar" onclick="cerrarModalBorrar()">Cancelar</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 <script type="module" src="js/admin.js"></script>
 </body>

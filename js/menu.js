@@ -1,8 +1,7 @@
 import { guardarPedido, obtenerPagoMovil } from "./firebase.js";
 import { obtenerTasaBCV, getTasaActual, convertirABolivares, formatBs } from "./bcv.js";
 
-// ── Configuración ─────────────────────────────────────────────
-export const WHATSAPP = "584146834774"; // ← Número de Don Pepe
+export const WHATSAPP = "584140000000";
 
 export const MENU = [
   { id:1, emoji:"🍔", name:"Clásica Don Pepe",  desc:"Carne, queso, lechuga, tomate, mayonesa",        price:5    },
@@ -12,25 +11,21 @@ export const MENU = [
   { id:5, emoji:"🥓", name:"Bacon Crispy",       desc:"Bacon extra, carne, queso, cebolla caramelizada", price:7.50 },
 ];
 
-// ── Estado ────────────────────────────────────────────────────
 const qty = {};
 MENU.forEach(i => qty[i.id] = 0);
-let pagoMovilConfig  = null;
-let comprobanteFile  = null;
+let pagoMovilConfig = null;
 
-// ── Init ──────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", async () => {
   render();
   cargarBCV();
   pagoMovilConfig = await obtenerPagoMovil();
 });
 
-// ── BCV Banner ────────────────────────────────────────────────
 async function cargarBCV() {
   const result = await obtenerTasaBCV();
   if (result) {
-    document.getElementById("bcv-rate").textContent    = `1 USD = Bs. ${result.tasa.toLocaleString("es-VE", { minimumFractionDigits: 2 })}`;
-    document.getElementById("bcv-source").textContent  = `${result.fuente} · Actualizado hoy`;
+    document.getElementById("bcv-rate").textContent   = `1 USD = Bs. ${result.tasa.toLocaleString("es-VE", { minimumFractionDigits: 2 })}`;
+    document.getElementById("bcv-source").textContent = `${result.fuente} · Actualizado hoy`;
     document.getElementById("bcv-content").style.display = "flex";
     document.getElementById("bcv-loading").style.display = "none";
     updateSummary();
@@ -39,7 +34,6 @@ async function cargarBCV() {
   }
 }
 
-// ── Render menú ───────────────────────────────────────────────
 function render() {
   document.getElementById("menu").innerHTML = MENU.map(item => {
     const sel = qty[item.id] > 0;
@@ -74,7 +68,6 @@ window.change = function(id, delta) {
   render();
 };
 
-// ── Resumen ───────────────────────────────────────────────────
 function updateSummary() {
   const items = MENU.filter(i => qty[i.id] > 0);
   const total = items.reduce((s, i) => s + i.price * qty[i.id], 0);
@@ -86,12 +79,8 @@ function updateSummary() {
   btn.disabled = false;
 
   document.getElementById("summary-items").innerHTML = items.map(i =>
-    `<div class="summary-row">
-       <span>${i.name} ×${qty[i.id]}</span>
-       <span>$${(i.price * qty[i.id]).toFixed(2)}</span>
-     </div>`
+    `<div class="summary-row"><span>${i.name} ×${qty[i.id]}</span><span>$${(i.price*qty[i.id]).toFixed(2)}</span></div>`
   ).join("");
-
   document.getElementById("total-usd").textContent = `$${total.toFixed(2)}`;
 
   const tasa = getTasaActual();
@@ -104,64 +93,63 @@ function updateSummary() {
   }
 }
 
-// ── Mostrar modal de pago ─────────────────────────────────────
+window.copiarDato = function(texto, btn) {
+  navigator.clipboard.writeText(texto).then(() => {
+    const original = btn.innerHTML;
+    btn.innerHTML = '<i class="ti ti-check"></i>';
+    btn.classList.add("copiado");
+    setTimeout(() => { btn.innerHTML = original; btn.classList.remove("copiado"); }, 1500);
+  });
+};
+
 window.mostrarPago = function() {
   const nombre = document.getElementById("nombre").value.trim();
   const inpEl  = document.getElementById("nombre");
   const errEl  = document.getElementById("nombre-error");
-
   if (!nombre) { inpEl.classList.add("error"); errEl.style.display = "block"; inpEl.focus(); return; }
   inpEl.classList.remove("error"); errEl.style.display = "none";
 
   const items   = MENU.filter(i => qty[i.id] > 0);
   if (!items.length) return;
-
   const total   = items.reduce((s, i) => s + i.price * qty[i.id], 0);
   const tasa    = getTasaActual();
   const totalBs = tasa ? convertirABolivares(total) : null;
 
-  // Datos de pago
   let pagoHTML = "";
   if (pagoMovilConfig?.telefono) {
+    const filas = [
+      { label: "Banco",    valor: pagoMovilConfig.banco    },
+      { label: "Teléfono", valor: pagoMovilConfig.telefono },
+      { label: "Cédula",   valor: pagoMovilConfig.cedula   },
+      { label: "Nombre",   valor: pagoMovilConfig.nombre   },
+    ];
     pagoHTML = `
     <div class="pago-datos">
       <div class="pago-titulo"><i class="ti ti-device-mobile"></i> Datos de Pago Móvil</div>
-      <div class="pago-row"><span>Banco</span><strong>${pagoMovilConfig.banco}</strong></div>
-      <div class="pago-row"><span>Teléfono</span><strong>${pagoMovilConfig.telefono}</strong></div>
-      <div class="pago-row"><span>Cédula</span><strong>${pagoMovilConfig.cedula}</strong></div>
-      <div class="pago-row"><span>Nombre</span><strong>${pagoMovilConfig.nombre}</strong></div>
+      ${filas.map(f => `
+        <div class="pago-row">
+          <span>${f.label}</span>
+          <div class="pago-valor-wrap">
+            <strong>${f.valor}</strong>
+            <button class="btn-copiar" onclick="window.copiarDato('${f.valor}', this)" title="Copiar">
+              <i class="ti ti-copy"></i>
+            </button>
+          </div>
+        </div>`).join("")}
       <div class="pago-monto">
         Monto a pagar
         <span>${totalBs ? formatBs(totalBs) : `$${total.toFixed(2)}`}</span>
       </div>
+    </div>
+    <div class="comprobante-aviso">
+      <i class="ti ti-info-circle"></i>
+      <span>Estimado cliente, recuerde <strong>enviar su comprobante a nuestro WhatsApp</strong> para confirmar su pedido.</span>
     </div>`;
   } else {
     pagoHTML = `<div class="pago-datos"><p style="color:#888;text-align:center;padding:1rem;">Coordinar pago con el local.</p></div>`;
   }
 
-  document.getElementById("modal-pago-body").innerHTML = `
-    ${pagoHTML}
-    <div class="comprobante-section">
-      <div class="comprobante-label"><i class="ti ti-photo"></i> Adjunta tu comprobante de pago</div>
-      <div class="comprobante-drop" id="comp-drop" onclick="document.getElementById('comp-input').click()">
-        <i class="ti ti-upload" style="font-size:28px; color:#aaa;"></i>
-        <p>Toca para seleccionar o tomar foto</p>
-        <input type="file" id="comp-input" accept="image/*" capture="environment"
-               style="display:none" onchange="window.previsualizarComprobante(event)" />
-      </div>
-      <div id="comp-preview" style="display:none;">
-        <img id="comp-img" src="" alt="Comprobante" />
-        <button class="btn-quitar-comp" onclick="window.quitarComprobante()">
-          <i class="ti ti-x"></i> Quitar imagen
-        </button>
-      </div>
-      <div class="comprobante-aviso">
-        <i class="ti ti-info-circle"></i>
-        Al confirmar se abrirá WhatsApp. <strong>Envía la foto del comprobante en ese mismo chat.</strong>
-      </div>
-    </div>`;
-
-  comprobanteFile = null;
+  document.getElementById("modal-pago-body").innerHTML = pagoHTML;
   document.getElementById("modal-pago").classList.add("visible");
   document.body.style.overflow = "hidden";
 };
@@ -171,25 +159,6 @@ window.cerrarModal = function() {
   document.body.style.overflow = "";
 };
 
-window.previsualizarComprobante = function(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  comprobanteFile = file;
-  const url = URL.createObjectURL(file);
-  document.getElementById("comp-img").src            = url;
-  document.getElementById("comp-drop").style.display    = "none";
-  document.getElementById("comp-preview").style.display = "block";
-};
-
-window.quitarComprobante = function() {
-  comprobanteFile = null;
-  document.getElementById("comp-img").src               = "";
-  document.getElementById("comp-drop").style.display    = "block";
-  document.getElementById("comp-preview").style.display = "none";
-  document.getElementById("comp-input").value           = "";
-};
-
-// ── Enviar pedido ─────────────────────────────────────────────
 window.enviarPedido = async function() {
   const nombre  = document.getElementById("nombre").value.trim();
   const items   = MENU.filter(i => qty[i.id] > 0);
@@ -202,40 +171,34 @@ window.enviarPedido = async function() {
   btnEnviar.disabled    = true;
   btnEnviar.textContent = "Enviando...";
 
-  // Guardar en Firebase (sin comprobante)
   await guardarPedido({
-    cliente:  nombre,
-    items:    items.map(i => ({ id: i.id, name: i.name, qty: qty[i.id], price: i.price })),
+    cliente: nombre,
+    items:   items.map(i => ({ id: i.id, name: i.name, qty: qty[i.id], price: i.price })),
     total,
-    totalBs:  totalBs ? parseFloat(totalBs) : null,
-    tasaBCV:  tasa || null,
-    nota:     nota || null,
-    pagoEnviado: !!comprobanteFile,
+    totalBs: totalBs ? parseFloat(totalBs) : null,
+    tasaBCV: tasa || null,
+    nota:    nota || null,
   });
 
-  // Mensaje WhatsApp
   let msg = `¡Hola! Soy *${nombre}* y este es mi pedido 🍔\n\n`;
-  items.forEach(i => msg += `• ${i.name} ×${qty[i.id]} — $${(i.price * qty[i.id]).toFixed(2)}\n`);
+  items.forEach(i => msg += `• ${i.name} ×${qty[i.id]} — $${(i.price*qty[i.id]).toFixed(2)}\n`);
   msg += `\n*Total: $${total.toFixed(2)}*`;
   if (totalBs) msg += ` _(${formatBs(totalBs)})_`;
   if (nota) msg += `\n\n📝 *Notas:* ${nota}`;
-  msg += `\n\n📸 *Te envío el comprobante de pago en este chat.*`;
+  msg += `\n\n📸 *En seguida le envío el comprobante de pago.*`;
 
   cerrarModal();
   window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`, "_blank");
-  showToast("¡Pedido enviado! Envía la foto del comprobante en WhatsApp 📸");
+  showToast("¡Pedido enviado! Recuerda enviar el comprobante 📸");
 
-  // Reset
   MENU.forEach(i => qty[i.id] = 0);
   document.getElementById("nota").value   = "";
   document.getElementById("nombre").value = "";
-  comprobanteFile = null;
   btnEnviar.disabled = false;
   btnEnviar.innerHTML = '<i class="ti ti-brand-whatsapp"></i> Confirmar y enviar pedido';
   render();
 };
 
-// ── Toast ─────────────────────────────────────────────────────
 function showToast(msg) {
   const t = document.getElementById("toast");
   t.textContent = msg;

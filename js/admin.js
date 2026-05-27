@@ -1,17 +1,25 @@
-import { obtenerPedidos, obtenerPedidosPorRango } from "./firebase.js";
+import { obtenerPedidos, obtenerPedidosPorRango, guardarPagoMovil, obtenerPagoMovil } from "./firebase.js";
+import { deleteDoc, doc, getFirestore } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { MENU } from "./menu.js";
 
-// ── PIN ───────────────────────────────────────────────────────
 const PIN = "1234"; // ← Cámbialo aquí
 
-// ── Init ──────────────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey:            "AIzaSyAvO8mKOitUzLfaj-7exe5rrexsw-31IrQ",
+  authDomain:        "burger-don-pepe.firebaseapp.com",
+  projectId:         "burger-don-pepe",
+  storageBucket:     "burger-don-pepe.firebasestorage.app",
+  messagingSenderId: "289295612007",
+  appId:             "1:289295612007:web:2ed6462e189a1ed5b9fcc2",
+};
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
 document.addEventListener("DOMContentLoaded", () => {
-  // Enter en el PIN
   document.getElementById("pin-input").addEventListener("keydown", e => {
     if (e.key === "Enter") checkPin();
   });
-
-  // Tabs
   document.querySelectorAll(".tab").forEach(tab => {
     tab.addEventListener("click", () => {
       document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
@@ -20,10 +28,8 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById(tab.dataset.tab).classList.add("active");
     });
   });
-
-  // Filtro de fechas por defecto: últimos 7 días
-  const hoy    = new Date();
-  const hace7  = new Date(); hace7.setDate(hoy.getDate() - 7);
+  const hoy   = new Date();
+  const hace7 = new Date(); hace7.setDate(hoy.getDate() - 7);
   document.getElementById("fecha-desde").value = hace7.toISOString().split("T")[0];
   document.getElementById("fecha-hasta").value = hoy.toISOString().split("T")[0];
 });
@@ -32,18 +38,18 @@ document.addEventListener("DOMContentLoaded", () => {
 window.checkPin = function() {
   const val = document.getElementById("pin-input").value;
   if (val === PIN) {
-    document.getElementById("login-box").style.display   = "none";
-    document.getElementById("dashboard").style.display   = "block";
+    document.getElementById("login-box").style.display  = "none";
+    document.getElementById("dashboard").style.display  = "block";
     cargarDatos();
+    cargarPagoMovil();
   } else {
     document.getElementById("pin-error").style.display = "block";
     document.getElementById("pin-input").value = "";
   }
 };
 
-// ── Cargar datos ──────────────────────────────────────────────
+// ── Datos ─────────────────────────────────────────────────────
 async function cargarDatos() {
-  cargarPagoMovil();
   showLoading(true);
   const pedidos = await obtenerPedidos();
   showLoading(false);
@@ -66,38 +72,29 @@ function showLoading(on) {
   document.getElementById("loading-indicator").style.display = on ? "block" : "none";
 }
 
-// ── Resumen / estadísticas ────────────────────────────────────
+// ── Resumen ───────────────────────────────────────────────────
 function renderResumen(pedidos) {
-  const totalPedidos  = pedidos.length;
   const totalUSD      = pedidos.reduce((s, p) => s + (p.total || 0), 0);
-  const totalUnidades = pedidos.reduce((s, p) =>
-    s + (p.items || []).reduce((a, i) => a + i.qty, 0), 0);
+  const totalUnidades = pedidos.reduce((s, p) => s + (p.items||[]).reduce((a,i) => a+i.qty, 0), 0);
 
-  // Conteo por producto
   const ventas = {};
   MENU.forEach(m => ventas[m.id] = { qty: 0, revenue: 0 });
-  pedidos.forEach(p => {
-    (p.items || []).forEach(i => {
-      if (ventas[i.id] !== undefined) {
-        ventas[i.id].qty     += i.qty;
-        ventas[i.id].revenue += i.qty * i.price;
-      }
-    });
-  });
+  pedidos.forEach(p => (p.items||[]).forEach(i => {
+    if (ventas[i.id]) { ventas[i.id].qty += i.qty; ventas[i.id].revenue += i.qty * i.price; }
+  }));
 
-  const sorted  = [...MENU].sort((a, b) => ventas[b.id].qty - ventas[a.id].qty);
+  const sorted  = [...MENU].sort((a,b) => ventas[b.id].qty - ventas[a.id].qty);
   const topItem = ventas[sorted[0].id].qty > 0 ? sorted[0] : null;
 
-  document.getElementById("stat-pedidos").textContent  = totalPedidos;
+  document.getElementById("stat-pedidos").textContent  = pedidos.length;
   document.getElementById("stat-total").textContent    = `$${totalUSD.toFixed(2)}`;
   document.getElementById("stat-unidades").textContent = totalUnidades;
   document.getElementById("stat-top").textContent      = topItem ? `${topItem.emoji} ${topItem.name.split(" ")[0]}` : "—";
 
-  // Ranking
-  const maxQty = sorted[0] ? ventas[sorted[0].id].qty : 1;
+  const maxQty = ventas[sorted[0].id].qty || 1;
   document.getElementById("ranking").innerHTML = sorted.map(item => {
-    const v   = ventas[item.id];
-    const pct = maxQty > 0 ? Math.round((v.qty / maxQty) * 100) : 0;
+    const v = ventas[item.id];
+    const pct = Math.round((v.qty / maxQty) * 100);
     return `
     <div class="rank-item">
       <div class="rank-emoji">${item.emoji}</div>
@@ -113,20 +110,14 @@ function renderResumen(pedidos) {
   }).join("");
 }
 
-// ── Historial por día ─────────────────────────────────────────
+// ── Historial ─────────────────────────────────────────────────
 function renderHistorial(pedidos) {
   const histEl = document.getElementById("historial");
-
   if (!pedidos.length) {
-    histEl.innerHTML = `
-      <div class="empty-state">
-        <i class="ti ti-receipt-off"></i>
-        No hay pedidos en este período
-      </div>`;
+    histEl.innerHTML = `<div class="empty-state"><i class="ti ti-receipt-off"></i> No hay pedidos en este período</div>`;
     return;
   }
 
-  // Agrupar por día
   const porDia = {};
   pedidos.forEach(p => {
     const fecha = p.fecha?.toDate ? p.fecha.toDate() : new Date(p.fecha);
@@ -143,23 +134,26 @@ function renderHistorial(pedidos) {
       <div class="day-header" onclick="toggleDia('dia-${idx}')">
         <div>
           <div class="day-date">${label}</div>
-          <div class="day-summary">${dia.pedidos.length} pedido${dia.pedidos.length !== 1 ? "s" : ""}</div>
+          <div class="day-summary">${dia.pedidos.length} pedido${dia.pedidos.length!==1?"s":""}</div>
         </div>
         <div style="font-weight:700; color:#1a7a1a;">$${dia.total.toFixed(2)}</div>
       </div>
       <div class="day-orders" id="dia-${idx}">
         ${dia.pedidos.map(p => {
           const hora  = p.fechaDate.toLocaleTimeString("es-VE", { hour:"2-digit", minute:"2-digit" });
-          const items = (p.items || []).map(i => `${i.qty}× ${i.name}`).join(", ");
+          const items = (p.items||[]).map(i => `${i.qty}× ${i.name}`).join(", ");
           return `
-          <div class="order-row">
-            <div>
-              <div class="order-client"><i class="ti ti-user" style="font-size:12px;"></i> ${p.cliente || "Cliente"}</div>
+          <div class="order-row" id="order-${p.id}">
+            <div style="flex:1; min-width:0;">
+              <div class="order-client"><i class="ti ti-user" style="font-size:12px;"></i> ${p.cliente||"Cliente"}</div>
               <div class="order-items">${items}${p.nota ? ` · 📝 ${p.nota}` : ""}</div>
             </div>
             <div style="text-align:right; flex-shrink:0;">
-              <div class="order-total">$${(p.total || 0).toFixed(2)}</div>
+              <div class="order-total">$${(p.total||0).toFixed(2)}</div>
               <div class="order-time">${hora}</div>
+              <button class="btn-borrar-pedido" onclick="window.confirmarBorrar('${p.id}')">
+                <i class="ti ti-trash"></i>
+              </button>
             </div>
           </div>`;
         }).join("")}
@@ -169,21 +163,40 @@ function renderHistorial(pedidos) {
 }
 
 window.toggleDia = function(id) {
-  const el = document.getElementById(id);
-  el.classList.toggle("open");
+  document.getElementById(id).classList.toggle("open");
 };
 
-// ── Toast ─────────────────────────────────────────────────────
-function showToast(msg) {
-  const t = document.getElementById("toast");
-  t.textContent = msg;
-  t.classList.add("show");
-  setTimeout(() => t.classList.remove("show"), 3000);
+// ── Borrar pedido con PIN ─────────────────────────────────────
+window.confirmarBorrar = function(pedidoId) {
+  document.getElementById("modal-borrar").classList.add("visible");
+  document.getElementById("borrar-pin-input").value = "";
+  document.getElementById("borrar-pin-error").style.display = "none";
+  document.getElementById("btn-confirmar-borrar").onclick = () => ejecutarBorrar(pedidoId);
+};
+
+window.cerrarModalBorrar = function() {
+  document.getElementById("modal-borrar").classList.remove("visible");
+};
+
+async function ejecutarBorrar(pedidoId) {
+  const val = document.getElementById("borrar-pin-input").value;
+  if (val !== PIN) {
+    document.getElementById("borrar-pin-error").style.display = "block";
+    document.getElementById("borrar-pin-input").value = "";
+    return;
+  }
+  try {
+    await deleteDoc(doc(db, "pedidos", pedidoId));
+    cerrarModalBorrar();
+    const el = document.getElementById(`order-${pedidoId}`);
+    if (el) { el.style.opacity = "0"; el.style.transition = "opacity 0.3s"; setTimeout(() => el.remove(), 300); }
+    showToast("Pedido eliminado");
+  } catch(e) {
+    showToast("Error al eliminar el pedido");
+  }
 }
 
 // ── Pago Móvil ────────────────────────────────────────────────
-import { guardarPagoMovil, obtenerPagoMovil } from "./firebase.js";
-
 async function cargarPagoMovil() {
   const datos = await obtenerPagoMovil();
   if (!datos) return;
@@ -202,8 +215,7 @@ window.guardarPago = async function() {
     nombre:   document.getElementById("pm-nombre").value.trim(),
   };
   if (!datos.banco || !datos.telefono || !datos.cedula || !datos.nombre) {
-    showToast("Por favor completa todos los campos");
-    return;
+    showToast("Por favor completa todos los campos"); return;
   }
   const ok = await guardarPagoMovil(datos);
   if (ok) {
@@ -214,14 +226,20 @@ window.guardarPago = async function() {
 };
 
 function mostrarPreviewPago(datos) {
-  const preview = document.getElementById("pago-preview");
-  const content = document.getElementById("pago-preview-content");
-  preview.style.display = "block";
-  content.innerHTML = `
+  document.getElementById("pago-preview").style.display = "block";
+  document.getElementById("pago-preview-content").innerHTML = `
     <div class="preview-pago-box">
       <div class="preview-row"><span>Banco</span><strong>${datos.banco}</strong></div>
       <div class="preview-row"><span>Teléfono</span><strong>${datos.telefono}</strong></div>
       <div class="preview-row"><span>Cédula</span><strong>${datos.cedula}</strong></div>
       <div class="preview-row"><span>Nombre</span><strong>${datos.nombre}</strong></div>
     </div>`;
+}
+
+// ── Toast ─────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 3000);
 }
