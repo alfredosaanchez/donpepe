@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin – Burger Don Pepe</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css" />
+  <link rel="stylesheet" href="css/admin.css" />
+</head>
+<body>
+<div class="admin-app">
+
+  <!-- Header -->
+  <div class="admin-header-bar">
+    <div>
+      <h1>🍔 Panel Admin</h1>
+      <p>Burger Don Pepe</p>
+    </div>
+    <a href="index.html" class="btn-back">
+      <i class="ti ti-arrow-left"></i> Volver
+    </a>
+  </div>
+
+  <!-- Login -->
+  <div class="login-box" id="login-box">
+    <h2><i class="ti ti-shield-lock"></i> Acceso restringido</h2>
+    <p>Ingresa el PIN de administrador para continuar</p>
+    <div class="pin-row">
+      <input type="password" id="pin-input" class="pin-input" maxlength="4" placeholder="••••" />
+      <button class="btn-pin" onclick="checkPin()">Entrar</button>
+    </div>
+    <p class="pin-error" id="pin-error">PIN incorrecto. Intenta de nuevo.</p>
+  </div>
+
+  <!-- Dashboard -->
+  <div class="dashboard" id="dashboard">
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <div class="tab active" data-tab="tab-resumen">
+        <i class="ti ti-chart-bar"></i> Resumen
+      </div>
+      <div class="tab" data-tab="tab-historial">
+        <i class="ti ti-calendar"></i> Historial
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading-indicator" style="display:none; padding:2rem; text-align:center; color:#888;">
+      <i class="ti ti-loader" style="font-size:24px;"></i> Cargando datos...
+    </div>
+
+    <!-- Tab: Resumen -->
+    <div class="tab-content active" id="tab-resumen">
+
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-label">Pedidos totales</div>
+          <div class="stat-value" id="stat-pedidos">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total recaudado</div>
+          <div class="stat-value green" id="stat-total">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Unidades vendidas</div>
+          <div class="stat-value orange" id="stat-unidades">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Más pedido</div>
+          <div class="stat-value" id="stat-top" style="font-size:15px; margin-top:6px;">—</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="ti ti-trophy"></i> Ranking de productos</div>
+        <div id="ranking">
+          <div class="empty-state"><i class="ti ti-loader"></i> Cargando...</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Tab: Historial -->
+    <div class="tab-content" id="tab-historial">
+
+      <div class="date-filter">
+        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; flex:1;">
+          <input type="date" id="fecha-desde" />
+          <span style="color:#888; font-size:13px;">hasta</span>
+          <input type="date" id="fecha-hasta" />
+          <button class="btn-filter" onclick="filtrarPorFecha()">
+            <i class="ti ti-search"></i> Filtrar
+          </button>
+        </div>
+      </div>
+
+      <div id="historial">
+        <div class="empty-state">
+          <i class="ti ti-receipt-off"></i>
+          Cargando historial...
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module" src="js/admin.js"></script>
+</body>
+</html>

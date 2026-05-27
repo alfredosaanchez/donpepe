@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Burger Don Pepe – Pedidos</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css" />
+  <link rel="stylesheet" href="css/main.css" />
+</head>
+<body>
+<div class="app">
+
+  <!-- Banner BCV -->
+  <div class="bcv-banner">
+    <div class="bcv-left">
+      <i class="ti ti-currency-dollar"></i>
+      <div>
+        <div class="bcv-loading" id="bcv-loading">Cargando tasa BCV...</div>
+        <div id="bcv-content" style="display:none;">
+          <div class="bcv-rate" id="bcv-rate">—</div>
+          <div class="bcv-updated" id="bcv-source"></div>
+        </div>
+      </div>
+    </div>
+    <div style="font-size:11px; color:#6e9ecf; text-align:right;">
+      Banco Central<br>de Venezuela
+    </div>
+  </div>
+
+  <!-- Hero -->
+  <div class="hero">
+    <div style="font-size:36px; margin-bottom:8px;">🍔</div>
+    <h1>Burger Don Pepe</h1>
+    <p>Santa Ana de Coro · Delivery y para llevar</p>
+    <span class="badge-open">● Abierto ahora</span>
+  </div>
+
+  <!-- Nombre del cliente -->
+  <div class="cliente-box">
+    <label for="nombre"><i class="ti ti-user"></i> Tu nombre</label>
+    <input type="text" id="nombre" class="cliente-input" placeholder="Ej: María González" autocomplete="name" />
+    <p class="error-msg" id="nombre-error">Por favor escribe tu nombre antes de pedir.</p>
+  </div>
+
+  <!-- Menú -->
+  <p class="section-title">Hamburguesas</p>
+  <div class="menu-grid" id="menu"></div>
+
+  <!-- Notas -->
+  <div class="note-section" style="margin-top:1.25rem;">
+    <label for="nota"><i class="ti ti-pencil"></i> Notas especiales</label>
+    <textarea id="nota" rows="3" placeholder="Ej: sin cebolla, sin vegetales, extra salsa..."></textarea>
+  </div>
+
+  <!-- Resumen -->
+  <div class="divider"></div>
+  <div class="summary-wrap" id="summary">
+    <div id="summary-items"></div>
+    <div style="height:1px; background:#e8e8e8; margin:8px 0;"></div>
+    <div class="summary-total">
+      <span>Total</span>
+      <span id="total-usd">$0.00</span>
+    </div>
+    <div class="summary-bs" id="total-bs-row" style="display:none;">
+      <span>Equivalente en Bs.</span>
+      <span id="total-bs">—</span>
+    </div>
+  </div>
+
+  <!-- Botones -->
+  <button class="btn-order" id="btn-pedir" disabled onclick="enviarPedido()">
+    <i class="ti ti-brand-whatsapp"></i> Pedir por WhatsApp
+  </button>
+
+  <a href="admin.html" class="btn-admin-link">
+    <i class="ti ti-lock"></i> Panel de administrador
+  </a>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module" src="js/menu.js"></script>
+</body>
+</html>
