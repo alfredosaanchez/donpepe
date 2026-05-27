@@ -220,3 +220,46 @@ body {
   .admin-header-bar { border-radius: 0; }
   .stat-grid { grid-template-columns: 1fr 1fr; }
 }
+
+/* ── Formulario pago móvil ── */
+.form-group { margin-bottom: 1rem; }
+.form-label { font-size: 13px; color: #666; font-weight: 600; display: block; margin-bottom: 6px; }
+.form-input {
+  width: 100%;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  color: #222;
+  background: #fff;
+}
+.form-input:focus { outline: none; border-color: #1a7a1a; }
+
+.btn-guardar-pago {
+  display: block;
+  width: 100%;
+  background: #1a7a1a;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  margin-top: 0.5rem;
+  transition: background 0.15s;
+}
+.btn-guardar-pago:hover { background: #145c14; }
+
+/* Preview pago */
+.preview-pago-box {
+  background: #f0faf0;
+  border: 1.5px solid #1a7a1a;
+  border-radius: 12px;
+  padding: 1rem;
+}
+.preview-row { display: flex; justify-content: space-between; font-size: 14px; color: #444; padding: 5px 0; border-bottom: 1px solid #d4edd4; }
+.preview-row:last-child { border-bottom: none; }
+.preview-row span { color: #888; }

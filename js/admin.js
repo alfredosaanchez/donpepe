@@ -43,6 +43,7 @@ window.checkPin = function() {
 
 // ── Cargar datos ──────────────────────────────────────────────
 async function cargarDatos() {
+  cargarPagoMovil();
   showLoading(true);
   const pedidos = await obtenerPedidos();
   showLoading(false);
@@ -178,4 +179,49 @@ function showToast(msg) {
   t.textContent = msg;
   t.classList.add("show");
   setTimeout(() => t.classList.remove("show"), 3000);
+}
+
+// ── Pago Móvil ────────────────────────────────────────────────
+import { guardarPagoMovil, obtenerPagoMovil } from "./firebase.js";
+
+async function cargarPagoMovil() {
+  const datos = await obtenerPagoMovil();
+  if (!datos) return;
+  document.getElementById("pm-banco").value    = datos.banco    || "";
+  document.getElementById("pm-telefono").value = datos.telefono || "";
+  document.getElementById("pm-cedula").value   = datos.cedula   || "";
+  document.getElementById("pm-nombre").value   = datos.nombre   || "";
+  mostrarPreviewPago(datos);
+}
+
+window.guardarPago = async function() {
+  const datos = {
+    banco:    document.getElementById("pm-banco").value.trim(),
+    telefono: document.getElementById("pm-telefono").value.trim(),
+    cedula:   document.getElementById("pm-cedula").value.trim(),
+    nombre:   document.getElementById("pm-nombre").value.trim(),
+  };
+  if (!datos.banco || !datos.telefono || !datos.cedula || !datos.nombre) {
+    showToast("Por favor completa todos los campos");
+    return;
+  }
+  const ok = await guardarPagoMovil(datos);
+  if (ok) {
+    document.getElementById("pago-guardado").style.display = "block";
+    setTimeout(() => document.getElementById("pago-guardado").style.display = "none", 3000);
+    mostrarPreviewPago(datos);
+  }
+};
+
+function mostrarPreviewPago(datos) {
+  const preview = document.getElementById("pago-preview");
+  const content = document.getElementById("pago-preview-content");
+  preview.style.display = "block";
+  content.innerHTML = `
+    <div class="preview-pago-box">
+      <div class="preview-row"><span>Banco</span><strong>${datos.banco}</strong></div>
+      <div class="preview-row"><span>Teléfono</span><strong>${datos.telefono}</strong></div>
+      <div class="preview-row"><span>Cédula</span><strong>${datos.cedula}</strong></div>
+      <div class="preview-row"><span>Nombre</span><strong>${datos.nombre}</strong></div>
+    </div>`;
 }

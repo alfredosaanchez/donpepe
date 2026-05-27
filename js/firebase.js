@@ -1,6 +1,6 @@
 // ── Configuración Firebase ────────────────────────────────────
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, query, orderBy, where, Timestamp }
+import { getFirestore, collection, addDoc, getDocs, query, orderBy, where, Timestamp, doc, setDoc, getDoc }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -56,5 +56,27 @@ export async function obtenerPedidosPorRango(desde, hasta) {
   } catch (e) {
     console.error("Error filtrando pedidos:", e);
     return [];
+  }
+}
+
+// ── Guardar datos de pago móvil ───────────────────────────────
+export async function guardarPagoMovil(datos) {
+  try {
+    await setDoc(doc(db, "config", "pagoMovil"), datos);
+    return true;
+  } catch (e) {
+    console.error("Error guardando pago móvil:", e);
+    return false;
+  }
+}
+
+// ── Obtener datos de pago móvil ───────────────────────────────
+export async function obtenerPagoMovil() {
+  try {
+    const snap = await getDoc(doc(db, "config", "pagoMovil"));
+    return snap.exists() ? snap.data() : null;
+  } catch (e) {
+    console.error("Error obteniendo pago móvil:", e);
+    return null;
   }
 }

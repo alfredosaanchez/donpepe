@@ -43,6 +43,9 @@
       <div class="tab" data-tab="tab-historial">
         <i class="ti ti-calendar"></i> Historial
       </div>
+      <div class="tab" data-tab="tab-pago">
+        <i class="ti ti-device-mobile"></i> Pago Móvil
+      </div>
     </div>
 
     <!-- Loading -->
@@ -52,7 +55,6 @@
 
     <!-- Tab: Resumen -->
     <div class="tab-content active" id="tab-resumen">
-
       <div class="stat-grid">
         <div class="stat-card">
           <div class="stat-label">Pedidos totales</div>
@@ -71,19 +73,14 @@
           <div class="stat-value" id="stat-top" style="font-size:15px; margin-top:6px;">—</div>
         </div>
       </div>
-
       <div class="card">
         <div class="card-title"><i class="ti ti-trophy"></i> Ranking de productos</div>
-        <div id="ranking">
-          <div class="empty-state"><i class="ti ti-loader"></i> Cargando...</div>
-        </div>
+        <div id="ranking"><div class="empty-state"><i class="ti ti-loader"></i> Cargando...</div></div>
       </div>
-
     </div>
 
     <!-- Tab: Historial -->
     <div class="tab-content" id="tab-historial">
-
       <div class="date-filter">
         <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; flex:1;">
           <input type="date" id="fecha-desde" />
@@ -94,21 +91,72 @@
           </button>
         </div>
       </div>
-
       <div id="historial">
-        <div class="empty-state">
-          <i class="ti ti-receipt-off"></i>
-          Cargando historial...
+        <div class="empty-state"><i class="ti ti-receipt-off"></i> Cargando historial...</div>
+      </div>
+    </div>
+
+    <!-- Tab: Pago Móvil -->
+    <div class="tab-content" id="tab-pago">
+      <div class="card">
+        <div class="card-title"><i class="ti ti-device-mobile"></i> Configurar Pago Móvil</div>
+        <p style="font-size:13px; color:#888; margin-bottom:1rem;">
+          Estos datos aparecerán al cliente cuando vaya a pagar su pedido.
+        </p>
+
+        <div class="form-group">
+          <label class="form-label">Banco</label>
+          <select id="pm-banco" class="form-input">
+            <option value="">Selecciona un banco...</option>
+            <option>Banco de Venezuela</option>
+            <option>Banesco</option>
+            <option>Mercantil</option>
+            <option>BBVA Provincial</option>
+            <option>Bicentenario</option>
+            <option>BNC</option>
+            <option>Bancaribe</option>
+            <option>BOD</option>
+            <option>Venezolano de Crédito</option>
+            <option>Sofitasa</option>
+            <option>BanFanb</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Número de teléfono</label>
+          <input type="tel" id="pm-telefono" class="form-input" placeholder="Ej: 0414-1234567" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Cédula del titular</label>
+          <input type="text" id="pm-cedula" class="form-input" placeholder="Ej: V-12345678" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Nombre del titular</label>
+          <input type="text" id="pm-nombre" class="form-input" placeholder="Ej: José Ramírez" />
+        </div>
+
+        <button class="btn-guardar-pago" onclick="guardarPago()">
+          <i class="ti ti-device-floppy"></i> Guardar datos de pago
+        </button>
+
+        <div id="pago-guardado" style="display:none; margin-top:10px; text-align:center; color:#1a7a1a; font-size:14px; font-weight:600;">
+          <i class="ti ti-circle-check"></i> ¡Datos guardados correctamente!
         </div>
       </div>
 
+      <!-- Preview -->
+      <div class="card" id="pago-preview" style="display:none;">
+        <div class="card-title"><i class="ti ti-eye"></i> Así lo verá el cliente</div>
+        <div id="pago-preview-content"></div>
+      </div>
     </div>
 
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
-
 <script type="module" src="js/admin.js"></script>
 </body>
 </html>

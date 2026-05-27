@@ -67,9 +67,9 @@
     </div>
   </div>
 
-  <!-- Botones -->
-  <button class="btn-order" id="btn-pedir" disabled onclick="enviarPedido()">
-    <i class="ti ti-brand-whatsapp"></i> Pedir por WhatsApp
+  <!-- Botón pagar -->
+  <button class="btn-order" id="btn-pedir" disabled onclick="mostrarPago()">
+    <i class="ti ti-credit-card"></i> Proceder al pago
   </button>
 
   <a href="admin.html" class="btn-admin-link">
@@ -78,8 +78,21 @@
 
 </div>
 
-<div class="toast" id="toast"></div>
+<!-- Modal de pago -->
+<div class="modal-overlay" id="modal-pago" onclick="if(event.target===this) cerrarModal()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title"><i class="ti ti-credit-card"></i> Pagar pedido</div>
+      <button class="btn-cerrar" onclick="cerrarModal()"><i class="ti ti-x"></i></button>
+    </div>
+    <div id="modal-pago-body"></div>
+    <button class="btn-enviar-pedido" id="btn-enviar-pedido" onclick="enviarPedido()">
+      <i class="ti ti-brand-whatsapp"></i> Confirmar y enviar pedido
+    </button>
+  </div>
+</div>
 
+<div class="toast" id="toast"></div>
 <script type="module" src="js/menu.js"></script>
 </body>
 </html>
