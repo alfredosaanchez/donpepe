@@ -204,6 +204,7 @@ async function ejecutarBorrar() {
     const el = document.getElementById(`order-${pedidoABorrar}`);
     if (el) { el.style.opacity = "0"; el.style.transition = "opacity 0.3s"; setTimeout(() => el.remove(), 300); }
     showToast("Pedido eliminado");
+cargarDatos();
   } else {
     showToast("Error al eliminar el pedido");
   }
