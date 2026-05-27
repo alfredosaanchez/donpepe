@@ -1,19 +1,15 @@
 import { obtenerPedidos, obtenerPedidosPorRango, guardarPagoMovil, obtenerPagoMovil, eliminarPedido } from "./firebase.js";
-import { MENU } from "./menu.js";
 import { obtenerTasaBCV, formatBs, convertirABolivares } from "./bcv.js";
-
-let tasaAdmin = null;
+import { MENU } from "./data.js";
 
 const PIN = "1234";
 let pedidoABorrar = null;
+let tasaAdmin = null;
 
-// ── Init ──────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
-  // PIN login
   document.getElementById("btn-pin").addEventListener("click", checkPin);
   document.getElementById("pin-input").addEventListener("keydown", e => { if (e.key === "Enter") checkPin(); });
 
-  // Tabs
   document.querySelectorAll(".tab").forEach(tab => {
     tab.addEventListener("click", () => {
       document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
@@ -23,19 +19,12 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // Fechas por defecto
-  const hoy   = new Date();
-  const hace7 = new Date(); hace7.setDate(hoy.getDate() - 7);
+  const hoy = new Date(); const hace7 = new Date(); hace7.setDate(hoy.getDate() - 7);
   document.getElementById("fecha-desde").value = hace7.toISOString().split("T")[0];
   document.getElementById("fecha-hasta").value = hoy.toISOString().split("T")[0];
 
-  // Filtrar
   document.getElementById("btn-filtrar").addEventListener("click", filtrarPorFecha);
-
-  // Guardar pago
   document.getElementById("btn-guardar-pago").addEventListener("click", guardarPago);
-
-  // Modal borrar
   document.getElementById("btn-cancelar-borrar").addEventListener("click", cerrarModalBorrar);
   document.getElementById("modal-borrar").addEventListener("click", e => {
     if (e.target === document.getElementById("modal-borrar")) cerrarModalBorrar();
@@ -44,12 +33,11 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("borrar-pin-input").addEventListener("keydown", e => { if (e.key === "Enter") ejecutarBorrar(); });
 });
 
-// ── Login ─────────────────────────────────────────────────────
 function checkPin() {
   const val = document.getElementById("pin-input").value;
   if (val === PIN) {
-    document.getElementById("login-box").style.display  = "none";
-    document.getElementById("dashboard").style.display  = "block";
+    document.getElementById("login-box").style.display = "none";
+    document.getElementById("dashboard").style.display = "block";
     cargarDatos();
     cargarPagoMovil();
   } else {
@@ -58,11 +46,10 @@ function checkPin() {
   }
 }
 
-// ── Cargar datos ──────────────────────────────────────────────
 async function cargarDatos() {
+  showLoading(true);
   const result = await obtenerTasaBCV();
   if (result) tasaAdmin = result.tasa;
-  showLoading(true);
   const pedidos = await obtenerPedidos();
   showLoading(false);
   renderResumen(pedidos);
@@ -84,7 +71,6 @@ function showLoading(on) {
   document.getElementById("loading-indicator").style.display = on ? "block" : "none";
 }
 
-// ── Resumen ───────────────────────────────────────────────────
 function renderResumen(pedidos) {
   const totalUSD      = pedidos.reduce((s, p) => s + (p.total || 0), 0);
   const totalUnidades = pedidos.reduce((s, p) => s + (p.items||[]).reduce((a,i) => a+i.qty, 0), 0);
@@ -99,14 +85,14 @@ function renderResumen(pedidos) {
   const topItem = ventas[sorted[0].id].qty > 0 ? sorted[0] : null;
 
   document.getElementById("stat-pedidos").textContent  = pedidos.length;
-  const bsTotal = tasaAdmin ? ' / ' + formatBs(convertirABolivares(totalUSD)) : '';
-  document.getElementById("stat-total").textContent = '$' + totalUSD.toFixed(2) + bsTotal;
+  const bsTotal = tasaAdmin ? ` / ${formatBs(convertirABolivares(totalUSD))}` : "";
+  document.getElementById("stat-total").textContent    = `$${totalUSD.toFixed(2)}${bsTotal}`;
   document.getElementById("stat-unidades").textContent = totalUnidades;
   document.getElementById("stat-top").textContent      = topItem ? `${topItem.emoji} ${topItem.name.split(" ")[0]}` : "—";
 
   const maxQty = ventas[sorted[0].id].qty || 1;
   document.getElementById("ranking").innerHTML = sorted.map(item => {
-    const v   = ventas[item.id];
+    const v = ventas[item.id];
     const pct = Math.round((v.qty / maxQty) * 100);
     return `
     <div class="rank-item">
@@ -123,7 +109,6 @@ function renderResumen(pedidos) {
   }).join("");
 }
 
-// ── Historial ─────────────────────────────────────────────────
 function renderHistorial(pedidos) {
   const histEl = document.getElementById("historial");
   if (!pedidos.length) {
@@ -172,19 +157,16 @@ function renderHistorial(pedidos) {
     </div>`;
   }).join("");
 
-  // Eventos: toggle días
   document.querySelectorAll("[id^='header-dia-']").forEach(header => {
     const idx = header.id.replace("header-dia-", "");
     header.addEventListener("click", () => document.getElementById(`dia-${idx}`).classList.toggle("open"));
   });
 
-  // Eventos: botones borrar
   document.querySelectorAll(".btn-borrar-pedido").forEach(btn => {
     btn.addEventListener("click", () => abrirModalBorrar(btn.dataset.id));
   });
 }
 
-// ── Borrar pedido ─────────────────────────────────────────────
 function abrirModalBorrar(id) {
   pedidoABorrar = id;
   document.getElementById("borrar-pin-input").value = "";
@@ -207,15 +189,13 @@ async function ejecutarBorrar() {
   const ok = await eliminarPedido(pedidoABorrar);
   if (ok) {
     cerrarModalBorrar();
-    const el = document.getElementById(`order-${pedidoABorrar}`);
-    if (el) { el.style.opacity = "0"; el.style.transition = "opacity 0.3s"; setTimeout(() => el.remove(), 300); }
     showToast("Pedido eliminado");
+    cargarDatos();
   } else {
     showToast("Error al eliminar el pedido");
   }
 }
 
-// ── Pago Móvil ────────────────────────────────────────────────
 async function cargarPagoMovil() {
   const datos = await obtenerPagoMovil();
   if (!datos) return;
@@ -255,10 +235,8 @@ function mostrarPreviewPago(datos) {
     </div>`;
 }
 
-// ── Toast ─────────────────────────────────────────────────────
 function showToast(msg) {
   const t = document.getElementById("toast");
-  t.textContent = msg;
-  t.classList.add("show");
+  t.textContent = msg; t.classList.add("show");
   setTimeout(() => t.classList.remove("show"), 3000);
 }
