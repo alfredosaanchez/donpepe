@@ -1,15 +1,6 @@
 import { guardarPedido, obtenerPagoMovil } from "./firebase.js";
 import { obtenerTasaBCV, getTasaActual, convertirABolivares, formatBs } from "./bcv.js";
-
-export const WHATSAPP = "584146834774";
-
-export const MENU = [
-  { id:1, emoji:"🍔", name:"Clásica Don Pepe",  desc:"Carne, queso, lechuga, tomate, mayonesa",        price:5    },
-  { id:2, emoji:"🔥", name:"Burger Especial",    desc:"Doble carne, bacon, queso doble, salsa especial", price:8    },
-  { id:3, emoji:"🌶️", name:"Picante Loca",       desc:"Carne, jalapeños, queso, salsa picante",          price:6    },
-  { id:4, emoji:"🧀", name:"Cheese Lover",       desc:"Triple queso, carne, mostaza, pepinillos",        price:7    },
-  { id:5, emoji:"🥓", name:"Bacon Crispy",       desc:"Bacon extra, carne, queso, cebolla caramelizada", price:7.50 },
-];
+import { MENU, WHATSAPP } from "./data.js";
 
 const qty = {};
 MENU.forEach(i => qty[i.id] = 0);
@@ -73,24 +64,18 @@ function updateSummary() {
   const total = items.reduce((s, i) => s + i.price * qty[i.id], 0);
   const sumEl = document.getElementById("summary");
   const btn   = document.getElementById("btn-pedir");
-
   if (!items.length) { sumEl.style.display = "none"; btn.disabled = true; return; }
-  sumEl.style.display = "block";
-  btn.disabled = false;
-
+  sumEl.style.display = "block"; btn.disabled = false;
   document.getElementById("summary-items").innerHTML = items.map(i =>
     `<div class="summary-row"><span>${i.name} ×${qty[i.id]}</span><span>$${(i.price*qty[i.id]).toFixed(2)}</span></div>`
   ).join("");
   document.getElementById("total-usd").textContent = `$${total.toFixed(2)}`;
-
   const tasa = getTasaActual();
   const bsEl = document.getElementById("total-bs-row");
   if (tasa) {
     document.getElementById("total-bs").textContent = formatBs(convertirABolivares(total));
     bsEl.style.display = "flex";
-  } else {
-    bsEl.style.display = "none";
-  }
+  } else { bsEl.style.display = "none"; }
 }
 
 window.copiarDato = function(texto, btn) {
@@ -108,7 +93,6 @@ window.mostrarPago = function() {
   const errEl  = document.getElementById("nombre-error");
   if (!nombre) { inpEl.classList.add("error"); errEl.style.display = "block"; inpEl.focus(); return; }
   inpEl.classList.remove("error"); errEl.style.display = "none";
-
   const items   = MENU.filter(i => qty[i.id] > 0);
   if (!items.length) return;
   const total   = items.reduce((s, i) => s + i.price * qty[i.id], 0);
@@ -118,10 +102,10 @@ window.mostrarPago = function() {
   let pagoHTML = "";
   if (pagoMovilConfig?.telefono) {
     const filas = [
-      { label: "Banco",    valor: pagoMovilConfig.banco    },
-      { label: "Teléfono", valor: pagoMovilConfig.telefono },
-      { label: "Cédula",   valor: pagoMovilConfig.cedula   },
-      { label: "Nombre",   valor: pagoMovilConfig.nombre   },
+      { label:"Banco",    valor: pagoMovilConfig.banco    },
+      { label:"Teléfono", valor: pagoMovilConfig.telefono },
+      { label:"Cédula",   valor: pagoMovilConfig.cedula   },
+      { label:"Nombre",   valor: pagoMovilConfig.nombre   },
     ];
     pagoHTML = `
     <div class="pago-datos">
@@ -168,16 +152,13 @@ window.enviarPedido = async function() {
   const totalBs = tasa ? convertirABolivares(total) : null;
 
   const btnEnviar = document.getElementById("btn-enviar-pedido");
-  btnEnviar.disabled    = true;
-  btnEnviar.textContent = "Enviando...";
+  btnEnviar.disabled = true; btnEnviar.textContent = "Enviando...";
 
   await guardarPedido({
     cliente: nombre,
     items:   items.map(i => ({ id: i.id, name: i.name, qty: qty[i.id], price: i.price })),
-    total,
-    totalBs: totalBs ? parseFloat(totalBs) : null,
-    tasaBCV: tasa || null,
-    nota:    nota || null,
+    total, totalBs: totalBs ? parseFloat(totalBs) : null,
+    tasaBCV: tasa || null, nota: nota || null,
   });
 
   let msg = `¡Hola! Soy *${nombre}* y este es mi pedido 🍔\n\n`;
@@ -192,7 +173,7 @@ window.enviarPedido = async function() {
   showToast("¡Pedido enviado! Recuerda enviar el comprobante 📸");
 
   MENU.forEach(i => qty[i.id] = 0);
-  document.getElementById("nota").value   = "";
+  document.getElementById("nota").value = "";
   document.getElementById("nombre").value = "";
   btnEnviar.disabled = false;
   btnEnviar.innerHTML = '<i class="ti ti-brand-whatsapp"></i> Confirmar y enviar pedido';
@@ -201,7 +182,6 @@ window.enviarPedido = async function() {
 
 function showToast(msg) {
   const t = document.getElementById("toast");
-  t.textContent = msg;
-  t.classList.add("show");
+  t.textContent = msg; t.classList.add("show");
   setTimeout(() => t.classList.remove("show"), 4000);
 }
