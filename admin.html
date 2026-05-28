@@ -11,10 +11,7 @@
 <div class="admin-app">
 
   <div class="admin-header-bar">
-    <div>
-      <h1>🍔 Panel Admin</h1>
-      <p>Burger Don Pepe</p>
-    </div>
+    <div><h1>🍔 Panel Admin</h1><p>Burger Don Pepe</p></div>
     <a href="index.html" class="btn-back"><i class="ti ti-arrow-left"></i> Volver</a>
   </div>
 
@@ -33,7 +30,8 @@
     <div class="tabs">
       <div class="tab active" data-tab="tab-resumen"><i class="ti ti-chart-bar"></i> Resumen</div>
       <div class="tab" data-tab="tab-historial"><i class="ti ti-calendar"></i> Historial</div>
-      <div class="tab" data-tab="tab-pago"><i class="ti ti-device-mobile"></i> Pago Móvil</div>
+      <div class="tab" data-tab="tab-productos"><i class="ti ti-tools"></i> Productos</div>
+      <div class="tab" data-tab="tab-pago"><i class="ti ti-device-mobile"></i> Pago</div>
     </div>
 
     <div id="loading-indicator" style="display:none; padding:2rem; text-align:center; color:#888;">
@@ -65,6 +63,21 @@
         </div>
       </div>
       <div id="historial"><div class="empty-state"><i class="ti ti-receipt-off"></i> Cargando historial...</div></div>
+    </div>
+
+    <!-- Productos -->
+    <div class="tab-content" id="tab-productos">
+      <div class="card">
+        <div class="card-title"><i class="ti ti-tools"></i> Gestionar productos</div>
+        <p style="font-size:13px;color:#888;margin-bottom:1rem;">Agrega, edita o elimina productos del menú. Los cambios se reflejan de inmediato para los clientes.</p>
+        <div id="productos-lista"></div>
+        <button class="btn-agregar-prod" id="btn-agregar-producto">
+          <i class="ti ti-plus"></i> Agregar producto
+        </button>
+        <button class="btn-guardar-productos" onclick="guardarProductosAdmin()">
+          <i class="ti ti-device-floppy"></i> Guardar cambios
+        </button>
+      </div>
     </div>
 
     <!-- Pago Móvil -->

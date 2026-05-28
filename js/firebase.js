@@ -12,54 +12,54 @@ const firebaseConfig = {
   measurementId:     "G-ZQWCYV5L2Y"
 };
 
-// Evita inicializar Firebase dos veces
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 const db  = getFirestore(app);
 
 export async function guardarPedido(pedido) {
-  try {
-    await addDoc(collection(db, "pedidos"), { ...pedido, fecha: Timestamp.now() });
-    return true;
-  } catch (e) { console.error("Error guardando pedido:", e); return false; }
+  try { await addDoc(collection(db, "pedidos"), { ...pedido, fecha: Timestamp.now() }); return true; }
+  catch (e) { console.error(e); return false; }
 }
 
 export async function obtenerPedidos() {
   try {
     const snap = await getDocs(query(collection(db, "pedidos"), orderBy("fecha", "desc")));
     return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  } catch (e) { console.error("Error obteniendo pedidos:", e); return []; }
+  } catch (e) { console.error(e); return []; }
 }
 
 export async function obtenerPedidosPorRango(desde, hasta) {
   try {
-    const q = query(
-      collection(db, "pedidos"),
+    const q = query(collection(db, "pedidos"),
       where("fecha", ">=", Timestamp.fromDate(desde)),
       where("fecha", "<=", Timestamp.fromDate(hasta)),
-      orderBy("fecha", "desc")
-    );
+      orderBy("fecha", "desc"));
     const snap = await getDocs(q);
     return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  } catch (e) { console.error("Error filtrando pedidos:", e); return []; }
+  } catch (e) { console.error(e); return []; }
 }
 
-export async function eliminarPedido(pedidoId) {
-  try {
-    await deleteDoc(doc(db, "pedidos", pedidoId));
-    return true;
-  } catch (e) { console.error("Error eliminando pedido:", e); return false; }
+export async function eliminarPedido(id) {
+  try { await deleteDoc(doc(db, "pedidos", id)); return true; }
+  catch (e) { console.error(e); return false; }
 }
 
 export async function guardarPagoMovil(datos) {
-  try {
-    await setDoc(doc(db, "config", "pagoMovil"), datos);
-    return true;
-  } catch (e) { console.error("Error guardando pago móvil:", e); return false; }
+  try { await setDoc(doc(db, "config", "pagoMovil"), datos); return true; }
+  catch (e) { console.error(e); return false; }
 }
 
 export async function obtenerPagoMovil() {
-  try {
-    const snap = await getDoc(doc(db, "config", "pagoMovil"));
-    return snap.exists() ? snap.data() : null;
-  } catch (e) { console.error("Error obteniendo pago móvil:", e); return null; }
+  try { const s = await getDoc(doc(db, "config", "pagoMovil")); return s.exists() ? s.data() : null; }
+  catch (e) { console.error(e); return null; }
+}
+
+// ── Productos ─────────────────────────────────────────────────
+export async function guardarProductos(productos) {
+  try { await setDoc(doc(db, "config", "productos"), { lista: productos }); return true; }
+  catch (e) { console.error(e); return false; }
+}
+
+export async function obtenerProductos() {
+  try { const s = await getDoc(doc(db, "config", "productos")); return s.exists() ? s.data().lista : null; }
+  catch (e) { console.error(e); return null; }
 }
