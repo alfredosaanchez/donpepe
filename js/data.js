@@ -7,4 +7,4 @@ export const MENU_DEFAULT = [
   { id:5, emoji:"🥓", name:"Bacon Crispy",       desc:"Bacon extra, carne, queso, cebolla caramelizada", price:7.50 },
 ];
 
-export const WHATSAPP = "584140000000"; // ← Número de Don Pepe
+export const WHATSAPP = "584146834774"; // ← Número de Don Pepe
