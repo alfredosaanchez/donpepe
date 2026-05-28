@@ -147,7 +147,7 @@ function renderHistorial(pedidos) {
           return `
           <div class="order-row" id="order-${p.id}">
             <div style="flex:1;min-width:0;">
-              <div class="order-client"><i class="ti ti-user" style="font-size:12px;"></i> ${p.cliente||"Cliente"}</div>
+              <div class="order-client"><span class="order-num">${p.numero ? "#"+String(p.numero).padStart(4,"0")+" · " : ""}</span><i class="ti ti-user" style="font-size:12px;"></i> ${p.cliente||"Cliente"}</div>
               <div class="order-items">${items}${p.nota?` · 📝 ${p.nota}`:""}</div>
             </div>
             <div style="text-align:right;flex-shrink:0;">

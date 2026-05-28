@@ -418,3 +418,25 @@ body {
 }
 .btn-copiar:hover  { background: #d0edd0; }
 .btn-copiar.copiado { background: #1a7a1a; color: #fff; }
+
+/* ── Copiar todos los datos de pago ── */
+.btn-copiar-todos {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 12px;
+  background: #1a7a1a;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+.btn-copiar-todos:hover { background: #145c14; }
+.btn-copiar-todos.copiado { background: #0d4d0d; }

@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, query, orderBy, where, Timestamp, doc, setDoc, getDoc, deleteDoc }
+import { getFirestore, collection, addDoc, getDocs, query, orderBy, where, Timestamp, doc, setDoc, getDoc, deleteDoc, runTransaction }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -15,9 +15,24 @@ const firebaseConfig = {
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 const db  = getFirestore(app);
 
+// ── Número correlativo seguro con transacción ─────────────────
+async function obtenerSiguienteNumero() {
+  const contadorRef = doc(db, "config", "contador");
+  let numero = 1;
+  await runTransaction(db, async (transaction) => {
+    const snap = await transaction.get(contadorRef);
+    numero = snap.exists() ? (snap.data().ultimo + 1) : 1;
+    transaction.set(contadorRef, { ultimo: numero });
+  });
+  return numero;
+}
+
 export async function guardarPedido(pedido) {
-  try { await addDoc(collection(db, "pedidos"), { ...pedido, fecha: Timestamp.now() }); return true; }
-  catch (e) { console.error(e); return false; }
+  try {
+    const numero = await obtenerSiguienteNumero();
+    await addDoc(collection(db, "pedidos"), { ...pedido, numero, fecha: Timestamp.now() });
+    return numero;
+  } catch (e) { console.error(e); return null; }
 }
 
 export async function obtenerPedidos() {
@@ -53,7 +68,6 @@ export async function obtenerPagoMovil() {
   catch (e) { console.error(e); return null; }
 }
 
-// ── Productos ─────────────────────────────────────────────────
 export async function guardarProductos(productos) {
   try { await setDoc(doc(db, "config", "productos"), { lista: productos }); return true; }
   catch (e) { console.error(e); return false; }

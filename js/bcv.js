@@ -31,7 +31,7 @@ export async function obtenerTasaBCV() {
       const tasa = data?.rates?.VES;
       if (tasa) {
         tasaActual = tasa;
-        return { tasa, fuente: "     Referencial", fecha: data.time_last_update_utc };
+        return { tasa, fuente: "Referencial", fecha: data.time_last_update_utc };
       }
     }
   } catch (e) { /* fallo total */ }

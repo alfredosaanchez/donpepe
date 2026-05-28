@@ -7,7 +7,6 @@ const qty = {};
 let pagoMovilConfig = null;
 
 document.addEventListener("DOMContentLoaded", async () => {
-  // Cargar productos desde Firebase (si existen)
   const productosDB = await obtenerProductos();
   if (productosDB && productosDB.length > 0) MENU = productosDB;
   MENU.forEach(i => qty[i.id] = 0);
@@ -80,12 +79,14 @@ function updateSummary() {
   else { bsEl.style.display = "none"; }
 }
 
-window.copiarDato = function(texto, btn) {
+window.copiarTodosPagos = function(btn) {
+  if (!pagoMovilConfig) return;
+  const texto = `${pagoMovilConfig.cedula} | ${pagoMovilConfig.banco} | ${pagoMovilConfig.telefono}`;
   navigator.clipboard.writeText(texto).then(() => {
     const original = btn.innerHTML;
-    btn.innerHTML = '<i class="ti ti-check"></i>';
+    btn.innerHTML = '<i class="ti ti-check"></i> ¡Copiado!';
     btn.classList.add("copiado");
-    setTimeout(() => { btn.innerHTML = original; btn.classList.remove("copiado"); }, 1500);
+    setTimeout(() => { btn.innerHTML = original; btn.classList.remove("copiado"); }, 2000);
   });
 };
 
@@ -103,23 +104,17 @@ window.mostrarPago = function() {
 
   let pagoHTML = "";
   if (pagoMovilConfig?.telefono) {
-    const filas = [
-      { label:"Banco",    valor: pagoMovilConfig.banco    },
-      { label:"Teléfono", valor: pagoMovilConfig.telefono },
-      { label:"Cédula",   valor: pagoMovilConfig.cedula   },
-      { label:"Nombre",   valor: pagoMovilConfig.nombre   },
-    ];
     pagoHTML = `
     <div class="pago-datos">
       <div class="pago-titulo"><i class="ti ti-device-mobile"></i> Datos de Pago Móvil</div>
-      ${filas.map(f => `
-        <div class="pago-row"><span>${f.label}</span>
-          <div class="pago-valor-wrap">
-            <strong>${f.valor}</strong>
-            <button class="btn-copiar" onclick="window.copiarDato('${f.valor}', this)" title="Copiar"><i class="ti ti-copy"></i></button>
-          </div>
-        </div>`).join("")}
+      <div class="pago-row"><span>Cédula</span><strong>${pagoMovilConfig.cedula}</strong></div>
+      <div class="pago-row"><span>Banco</span><strong>${pagoMovilConfig.banco}</strong></div>
+      <div class="pago-row"><span>Teléfono</span><strong>${pagoMovilConfig.telefono}</strong></div>
+      <div class="pago-row"><span>Nombre</span><strong>${pagoMovilConfig.nombre}</strong></div>
       <div class="pago-monto">Monto a pagar<span>${totalBs ? formatBs(totalBs) : `$${total.toFixed(2)}`}</span></div>
+      <button class="btn-copiar-todos" onclick="window.copiarTodosPagos(this)">
+        <i class="ti ti-copy"></i> Copiar datos de pago
+      </button>
     </div>
     <div class="comprobante-aviso">
       <i class="ti ti-info-circle"></i>
@@ -148,14 +143,16 @@ window.enviarPedido = async function() {
   const btnEnviar = document.getElementById("btn-enviar-pedido");
   btnEnviar.disabled = true; btnEnviar.textContent = "Enviando...";
 
-  await guardarPedido({
+  const numero = await guardarPedido({
     cliente: nombre,
     items:   items.map(i => ({ id: i.id, name: i.name, qty: qty[i.id], price: parseFloat(i.price) })),
     total, totalBs: totalBs ? parseFloat(totalBs) : null,
     tasaBCV: tasa || null, nota: nota || null,
   });
 
-  let msg = `¡Hola! Soy *${nombre}* y este es mi pedido 🍔\n\n`;
+  const numStr = numero ? `#${String(numero).padStart(4, "0")}` : "";
+  let msg = `🍔 *Pedido ${numStr}*\n`;
+  msg += `👤 *${nombre}*\n\n`;
   items.forEach(i => msg += `• ${i.name} ×${qty[i.id]} — $${(parseFloat(i.price)*qty[i.id]).toFixed(2)}\n`);
   msg += `\n*Total: $${total.toFixed(2)}*`;
   if (totalBs) msg += ` _(${formatBs(totalBs)})_`;
